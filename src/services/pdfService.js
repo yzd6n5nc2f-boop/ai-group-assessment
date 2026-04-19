@@ -1,17 +1,9 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
-// In a real implementation, this would connect to a backend service
-// that securely handles PDF generation and email sending
+import { sendEmailWithPDF } from './emailService';
 
 export const generateAndSendPDF = async (responseData) => {
   try {
-    // In a production environment, this would make an API call to a backend service
-    // that generates the PDF and sends it via email
-    
-    // For demonstration purposes, we're simulating the process
-    console.log('Generating PDF for:', responseData.email);
-    
     // Create a new jsPDF instance
     const doc = new jsPDF();
     
@@ -102,26 +94,18 @@ export const generateAndSendPDF = async (responseData) => {
     doc.setTextColor(67, 67, 67); // #434343
     doc.text('This profile helps shape your AI training.', 20, doc.lastAutoTable.finalY + 30);
     
-    // In a real implementation, we would send this PDF via email
-    // For now, we'll just log that we would send it
-    console.log('PDF would be sent to:', responseData.email);
-    
-    // Convert PDF to blob and simulate sending
+    // Convert PDF to blob
     const pdfBlob = doc.output('blob');
     
-    // In a real implementation, this would be an API call to a backend service
-    // that handles email sending securely
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('PDF generated and sent successfully');
-        resolve({ success: true });
-      }, 1000);
-    });
+    // Send email with PDF attachment
+    const emailResult = await sendEmailWithPDF(
+      responseData.email,
+      pdfBlob,
+      'Your AI Fluency Profile',
+      `Dear ${name},\n\nThank you for completing the AI Fluency Assessment. Please find your personalized AI Fluency Profile attached.\n\nThis profile will help us tailor the upcoming AI training to better meet your needs.\n\nBest regards,\nThe Training Team`
+    );
     
-    return {
-      success: true,
-      message: 'PDF generated and sent successfully'
-    };
+    return emailResult;
   } catch (error) {
     console.error('Error generating and sending PDF:', error);
     throw error;
