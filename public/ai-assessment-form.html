@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SME Team AI Fluency Profile Assessment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    * { font-family: 'Montserrat', system-ui, sans-serif; }
+    :root {
+      --primary-main: #CC0000;
+      --background: #FFFFFF;
+      --body-text: #434343;
+      --secondary-1: #E06667;
+      --secondary-2: #EB9A99;
+      --secondary-3: #F4CCCD;
+      --secondary-4: #999999;
+      --secondary-5: #CCCCCC;
+      --rounded-box: 1rem;
+      --rounded-btn: 0.8rem;
+    }
+    .text-muted-foreground { color: var(--body-text); }
+    .btn-primary { background-color: var(--primary-main); border-color: var(--primary-main); }
+    .btn-primary:hover { background-color: #990000; border-color: #990000; }
+    .text-primary { color: var(--primary-main); }
+    .border-primary { border-color: var(--primary-main); }
+    .bg-primary { background-color: var(--primary-main); }
+    .bg-secondary-1 { background-color: var(--secondary-1); }
+    .bg-secondary-2 { background-color: var(--secondary-2); }
+    .bg-secondary-3 { background-color: var(--secondary-3); }
+    .bg-secondary-4 { background-color: var(--secondary-4); }
+    .bg-secondary-5 { background-color: var(--secondary-5); }
+  </style>
+</head>
+<body class="bg-background text-body-text" data-theme="winter">
+  <div id="app" class="min-h-screen flex flex-col">
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <div id="assessment-container" class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden"></div>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      currentStep: 1,
+      totalSteps: 7,
+      formData: {
+        group: '', groupName: '', subgroup: '', subgroupName: '',
+        identityMode: '', firstName: '', lastName: '', email: '',
+        q1: '', q2: '', q3: '', q4: '', q5: '', q6: '',
+        txt_reason_for_avoidance: '',
+        q7: '', q8: '', q9: '', q10: '',
+        q11: [], q12: [], q13: [],
+        txt_other_tools: '', txt_current_use: '',
+        q14: '', q15: '', q16: '', q17: '', q18: '', q19: '',
+        q20: '', q21: '', q22: '', q23: '',
+        q24: '', q25: '',
+        txt_training_help: '', txt_specific_training_questions: '', txt_other_comments: ''
+      },
+      groups: [],
+      subgroups: [],
+      showSubgroup: false
+    };
+
+    const assessmentContainer = document.getElementById('assessment-container');
+
+    async function initAssessment() {
+      try {
+        const response = await fetch('/api/ai/groups');
+        if (response.ok) {
+          state.groups = await response.json();
+        } else {
+          state.groups = [
+            { id: 'g1', name: 'Marketing Team' },
+            { id: 'g2', name: 'Engineering Department' },
+            { id: 'g3', name: 'Sales Division' }
+          ];
+        }
+        renderStep();
+      } catch (error) {
+        console.error('Error initializing assessment:', error);
+        assessmentContainer.innerHTML = `
+          <div class="p-8 text-center">
+            <h2 class="text-xl font-bold text-error mb-4">Error Loading Assessment</h2>
+            <p class="mb-4">We couldn't load the assessment. Please refresh the page or contact support.</p>
+            <button class="btn btn-primary" onclick="initAssessment()">Retry</button>
+          </div>`;
+      }
+    }
+
+    function renderStep() {
+      switch (state.currentStep) {
+        case 1: renderGroupSelection(); break;
+        case 2: renderIdentitySelection(); break;
+        case 3: renderPersonalInfo(); break;
+        case 4: renderMindsetSection(); break;
+        case 5: renderUsageSection(); break;
+        case 6: renderRemainingSections(); break;
+        case 7: renderCompletion(); break;
+        default: renderGroupSelection();
+      }
+      updateProgressBar();
+      lucide.createIcons();
+    }
+
+    function updateProgressBar() {
+      const progressPercentage = ((state.currentStep - 1) / (state.totalSteps - 1)) * 100;
+      document.getElementById('progress-bar')?.remove();
+      const progressBar = document.createElement('div');
+      progressBar.id = 'progress-bar';
+      progressBar.className = 'w-full bg-gray-200 rounded-full h-2.5 mb-6';
+      progressBar.innerHTML = `
+        <div class="bg-primary h-2.5 rounded-full" style="width: ${progressPercentage}%"></div>
+        <div class="flex justify-between text-xs text-gray-500 mt-2">
+          <span>Step ${state.currentStep} of ${state.totalSteps}</span>
+          <span>${Math.round(progressPercentage)}% Complete</span>
+        </div>`;
+      const container = document.querySelector('main > div');
+      if (container.firstChild) {
+        container.insertBefore(progressBar, container.firstChild);
+      } else {
+        container.appendChild(progressBar);
+      }
+    }
+
+    function renderGroupSelection() {
+      const requiresSubgroup = state.showSubgroup && state.subgroups.length > 0;
+      const canContinue = Boolean(state.formData.group) && (!requiresSubgroup || Boolean(state.formData.subgroup));
+
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-6 text-center">SME Team AI Fluency Profile Assessment</h2>
+          <p class="mb-6 text-center">Please select your group and team to begin the assessment.</p>
+          <div class="form-control mb-6">
+            <label class="label font-bold">Which group are you part of?</label>
+            <select id="group-select" class="select select-bordered w-full" onchange="handleGroupChange(this.value)">
+              <option disabled value="">Select your group</option>
+              ${state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('')}
+            </select>
+          </div>
+          ${state.showSubgroup ? `
+            <div class="form-control mb-6" id="subgroup-section">
+              <label class="label font-bold">Which division or subgroup are you part of?</label>
+              <select id="subgroup-select" class="select select-bordered w-full" onchange="updateSubgroup(this.value)">
+                <option disabled value="">Select your subgroup</option>
+                ${state.subgroups.map(sg => `<option value="${sg.id}">${sg.name}</option>`).join('')}
+              </select>
+            </div>` : ''}
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" disabled>Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()" ${canContinue ? '' : 'disabled'}>Next</button>
+          </div>
+        </div>`;
+
+      const groupSelect = document.getElementById('group-select');
+      if (groupSelect) {
+        groupSelect.value = state.formData.group || '';
+      }
+
+      const subgroupSelect = document.getElementById('subgroup-select');
+      if (subgroupSelect) {
+        subgroupSelect.value = state.formData.subgroup || '';
+      }
+    }
+
+    async function handleGroupChange(groupId) {
+      updateFormData('group', groupId);
+      updateFormData('subgroup', '');
+      state.formData.subgroupName = '';
+      const group = state.groups.find(g => g.id === groupId);
+      if (group) updateFormData('groupName', group.name);
+
+      if (groupId) {
+        try {
+          const response = await fetch(`/api/ai/subgroups/${groupId}`);
+          if (response.ok) {
+            state.subgroups = await response.json();
+            state.showSubgroup = state.subgroups.length > 0;
+          } else {
+            state.subgroups = [];
+            state.showSubgroup = false;
+          }
+        } catch (error) {
+          console.error('Error loading subgroups:', error);
+          state.subgroups = [];
+          state.showSubgroup = false;
+        }
+      } else {
+        state.subgroups = [];
+        state.showSubgroup = false;
+      }
+      renderStep();
+    }
+
+    function updateSubgroup(subgroupId) {
+      updateFormData('subgroup', subgroupId);
+      renderStep();
+    }
+
+    function renderIdentitySelection() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-6 text-center">Identity Preference</h2>
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold mb-4">Choose how your profile is shown</h3>
+            <div class="space-y-4">
+              <div class="border rounded-lg p-4 cursor-pointer ${state.formData.identityMode === 'named' ? 'border-primary bg-secondary-3' : ''}" onclick="selectIdentityMode('named')">
+                <div class="flex items-start">
+                  <div class="mr-3 mt-1"><input type="radio" name="identity-mode" class="radio radio-primary" ${state.formData.identityMode === 'named' ? 'checked' : ''} readonly></div>
+                  <div><h4 class="font-bold">Named</h4><p class="text-sm mt-1">Your trainer and project admin may view your individual AI Fluency Profile.</p></div>
+                </div>
+              </div>
+              <div class="border rounded-lg p-4 cursor-pointer ${state.formData.identityMode === 'anonymised' ? 'border-primary bg-secondary-3' : ''}" onclick="selectIdentityMode('anonymised')">
+                <div class="flex items-start">
+                  <div class="mr-3 mt-1"><input type="radio" name="identity-mode" class="radio radio-primary" ${state.formData.identityMode === 'anonymised' ? 'checked' : ''} readonly></div>
+                  <div><h4 class="font-bold">Anonymised</h4><p class="text-sm mt-1">Your group leader will only see combined team results. Your trainer may still view your individual profile to help shape the training.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()" ${!state.formData.identityMode ? 'disabled' : ''}>Next</button>
+          </div>
+        </div>`;
+    }
+
+    function renderPersonalInfo() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-6 text-center">Personal Information</h2>
+          <p class="mb-6 text-center">Please provide your details (optional except where marked).</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="form-control">
+              <label class="label">First Name (optional)</label>
+              <input type="text" class="input input-bordered" value="${state.formData.firstName}" oninput="updateFormData('firstName', this.value)">
+            </div>
+            <div class="form-control">
+              <label class="label">Last Name (optional)</label>
+              <input type="text" class="input input-bordered" value="${state.formData.lastName}" oninput="updateFormData('lastName', this.value)">
+            </div>
+          </div>
+          <div class="form-control mb-6">
+            <label class="label"><span class="label-text">Email Address (optional)</span></label>
+            <input type="email" class="input input-bordered" placeholder="you@example.com" value="${state.formData.email}" oninput="updateFormData('email', this.value)">
+            <label class="label"><span class="label-text-alt">Add your email if you would like to receive your individual AI Fluency Profile as a PDF.</span></label>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>`;
+    }
+
+    function renderMindsetSection() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-2 text-center">Section 1: Mindset, Attitude and Fears</h2>
+          <p class="mb-6 text-center text-gray-600">About your feelings and concerns regarding AI</p>
+          <div class="space-y-8">
+            ${renderQuestion(1, "How do you currently feel about AI in your work?", ["I avoid it on principle","I am sceptical and prefer not to use it","I am cautious but open to it","I am interested and experimenting","I am positive and actively using it"])}
+            ${renderQuestion(2, "Which statement best reflects your current attitude towards AI?", ["It is mostly a risk","It is overhyped","It may be useful in some areas","It is becoming important for my role","It is a major opportunity if used properly"])}
+            ${renderQuestion(3, "What is your biggest concern about AI?", ["I do not trust it at all","It may replace jobs","It is inaccurate","It creates security or privacy risks","I am more concerned about not knowing how to use it well"])}
+            ${renderQuestion(4, "How strongly do you agree: \"AI will enhance many jobs more than it replaces them.\"", ["Strongly disagree","Disagree","Neither","Agree","Strongly agree"])}
+            ${renderQuestion(5, "How strongly do you agree: \"I feel confident enough to experiment with AI.\"", ["Strongly disagree","Disagree","Neither","Agree","Strongly agree"])}
+            ${renderQuestion(6, "Do you currently avoid using AI for any reason?", ["Yes, on principle","Yes, because I do not trust it","Yes, because I do not know how to use it properly","Sometimes, depending on the task","No, I use it where it makes sense"])}
+            <div class="form-control" id="reason-for-avoidance-section" style="${['0','1','2','3'].includes(state.formData.q6) ? 'display:block' : 'display:none'}">
+              <label class="label font-bold">If yes or sometimes, what is the main reason?</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="Please explain..." oninput="updateFormData('txt_reason_for_avoidance', this.value)">${state.formData.txt_reason_for_avoidance}</textarea>
+            </div>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>`;
+    }
+
+    function renderUsageSection() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-2 text-center">Section 2: Usage, Frequency and Context</h2>
+          <p class="mb-6 text-center text-gray-600">About how you currently use AI</p>
+          <div class="space-y-8">
+            ${renderQuestion(7, "How often do you use AI tools of any kind?", ["Never","Rarely","Occasionally","Weekly","Daily"])}
+            ${renderQuestion(8, "Where do you mainly use AI?", ["I do not use it","Personal use only","Mostly personal, occasionally work","Mostly work, occasionally personal","Regularly for both personal and work use"])}
+            ${renderQuestion(9, "How often do you use AI for work-related tasks?", ["Never","Rarely","Occasionally","Weekly","Daily"])}
+            ${renderQuestion(10, "How often do you use AI for personal tasks?", ["Never","Rarely","Occasionally","Weekly","Daily"])}
+            ${renderMultiSelectQuestion(11, "Which main AI platforms have you used? Select all that apply.", ["ChatGPT","Claude","Gemini","Microsoft Copilot","Perplexity","Grok","Other","None"])}
+            ${renderMultiSelectQuestion(12, "Which additional AI tools have you used? Select all that apply.", ["NotebookLM","Gamma","Canva AI tools","Fireflies","Otter","Midjourney","Sora","Zapier or Make with AI","Other","None"])}
+            ${renderMultiSelectQuestion(13, "What do you mainly use AI for today? Select all that apply.", ["Basic questions or search","Writing emails or messages","Summarising documents","Brainstorming ideas","Research","Content creation","Planning","Analysis","Image generation","Meeting notes","I do not use it"])}
+            <div class="form-control" id="other-tools-section" style="${state.formData.q11.includes('Other') || state.formData.q12.includes('Other') ? 'display:block' : 'display:none'}">
+              <label class="label font-bold">If you selected Other above, please list any other AI tools you use.</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="List other tools..." oninput="updateFormData('txt_other_tools', this.value)">${state.formData.txt_other_tools}</textarea>
+            </div>
+            <div class="form-control">
+              <label class="label font-bold">What do you currently use AI for, if anything?</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="Describe your current AI usage..." oninput="updateFormData('txt_current_use', this.value)">${state.formData.txt_current_use}</textarea>
+            </div>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>`;
+    }
+
+    function renderRemainingSections() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-2 text-center">Sections 3–5: Skills and Workflow</h2>
+          <p class="mb-6 text-center text-gray-600">About your prompting skills, research practices, and workflow maturity</p>
+          <div class="space-y-8">
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-semibold mb-4">Section 3: Prompting and Core Skill</h3>
+              ${renderQuestion(14, "How would you describe the way you usually prompt AI?", ["I ask very basic questions","I give a little context","I give clear instructions","I structure prompts with goal, context and output","I build prompts in a deliberate and repeatable way"])}
+              ${renderQuestion(15, "When using AI, how often do you give it relevant context before asking?", ["Never","Rarely","Sometimes","Often","Always"])}
+              ${renderQuestion(16, "Have you used AI to help you write or improve a prompt?", ["Never","Tried once","Occasionally","Regularly","This is part of my normal process"])}
+              ${renderQuestion(17, "Have you asked AI to ask you questions before producing the final answer?", ["Never","Rarely","Sometimes","Often","Almost always where needed"])}
+              ${renderQuestion(18, "When the first answer is weak, what do you usually do?", ["I stop using it","I ask again in a similar way","I make one or two changes","I refine the context and instructions","I iterate deliberately until the output is useful"])}
+              ${renderQuestion(19, "How good are you at getting AI to match a tone, structure or format you want?", ["Not good at all","Limited","Fair","Good","Very good"])}
+            </div>
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-semibold mb-4">Section 4: Research, Judgement and Quality of Use</h3>
+              ${renderQuestion(20, "Have you used AI for deeper research rather than just quick answers?", ["Never","Rarely","Sometimes","Often","Regularly for structured research tasks"])}
+              ${renderQuestion(21, "Have you used a deep research function within an AI platform?", ["No, never","I have heard of it but not used it","Tried once or twice","Used it a few times","Use it confidently where appropriate"])}
+              ${renderQuestion(22, "How often do you check or verify AI outputs before using them in important work?", ["Never","Rarely","Sometimes","Often","Always"])}
+              ${renderQuestion(23, "Have you compared outputs across more than one AI platform?", ["Never","Tried once","Occasionally","Regularly","I deliberately use different tools for different strengths"])}
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold mb-4">Section 5: Projects, Customisation and Workflow Maturity</h3>
+              ${renderQuestion(24, "Have you used Projects, custom GPTs, Gems, or similar AI workspaces?", ["Never","I have heard of them but not used them","Tried once or twice","Used them a few times","Use them regularly for defined purposes"])}
+              ${renderQuestion(25, "If you have used Projects or custom GPTs, how advanced was your setup?", ["I have not used them","Used defaults only","Added a custom prompt or instruction","Added a custom prompt plus files or knowledge","Built a bespoke setup for a repeated task or workflow"])}
+            </div>
+            <div class="space-y-6">
+              <div class="form-control">
+                <label class="label font-bold">What would you most like AI training to help you with?</label>
+                <textarea class="textarea textarea-bordered" rows="3" placeholder="Describe your training needs..." oninput="updateFormData('txt_training_help', this.value)">${state.formData.txt_training_help}</textarea>
+              </div>
+              <div class="form-control">
+                <label class="label font-bold">Do you have any specific questions you would like the training to cover?</label>
+                <textarea class="textarea textarea-bordered" rows="3" placeholder="List your questions..." oninput="updateFormData('txt_specific_training_questions', this.value)">${state.formData.txt_specific_training_questions}</textarea>
+              </div>
+              <div class="form-control">
+                <label class="label font-bold">Any other comments about AI, your role, or your current experience?</label>
+                <textarea class="textarea textarea-bordered" rows="3" placeholder="Share any additional thoughts..." oninput="updateFormData('txt_other_comments', this.value)">${state.formData.txt_other_comments}</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="submitAssessment()">Submit Assessment</button>
+          </div>
+        </div>`;
+    }
+
+    function renderCompletion() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8 text-center">
+          <div class="text-primary mb-6">
+            <i data-lucide="check-circle" style="width:64px;height:64px;margin:0 auto;"></i>
+          </div>
+          <h2 class="text-2xl font-bold mb-4">Thank You!</h2>
+          <p class="mb-4">Your responses have been recorded.</p>
+          <p class="mb-6">These insights will help shape the training.</p>
+          <div class="mt-8 bg-secondary-5 p-6 rounded-lg text-left max-w-2xl mx-auto">
+            <h3 class="font-bold text-lg mb-4">Submission Summary</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div><span class="font-medium">Group:</span> ${state.formData.groupName}</div>
+              ${state.formData.subgroupName ? `<div><span class="font-medium">Subgroup:</span> ${state.formData.subgroupName}</div>` : ''}
+              <div><span class="font-medium">Identity Mode:</span> ${state.formData.identityMode === 'named' ? 'Named' : 'Anonymised'}</div>
+              ${state.formData.firstName || state.formData.lastName ? `<div><span class="font-medium">Name:</span> ${state.formData.firstName} ${state.formData.lastName}</div>` : ''}
+              ${state.formData.email ? `<div><span class="font-medium">Email:</span> ${state.formData.email}</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      lucide.createIcons();
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    function renderQuestion(questionNumber, questionText, options) {
+      const currentValue = state.formData[`q${questionNumber}`];
+      return `
+        <div class="form-control">
+          <label class="label font-bold">Q${questionNumber}. ${questionText}</label>
+          <div class="space-y-2">
+            ${options.map((option, index) => `
+              <label class="flex items-center space-x-3 p-2 hover:bg-secondary-3 rounded-lg cursor-pointer">
+                <input type="radio" name="q${questionNumber}" class="radio radio-primary" value="${index}"
+                  ${currentValue === String(index) ? 'checked' : ''}
+                  onchange="updateFormData('q${questionNumber}', this.value)">
+                <span>${option}</span>
+              </label>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function selectIdentityMode(value) {
+      updateFormData('identityMode', value);
+      renderStep();
+    }
+
+    function renderMultiSelectQuestion(questionNumber, questionText, options) {
+      const currentValues = state.formData[`q${questionNumber}`] || [];
+      return `
+        <div class="form-control">
+          <label class="label font-bold">Q${questionNumber}. ${questionText}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            ${options.map(option => {
+              const optionId = `q${questionNumber}_${option.replace(/[^a-zA-Z0-9]/g, '')}`;
+              const isChecked = currentValues.includes(option);
+              return `
+                <label class="flex items-center space-x-3 p-2 hover:bg-secondary-3 rounded-lg cursor-pointer">
+                  <input type="checkbox" id="${optionId}" class="checkbox checkbox-primary"
+                    ${isChecked ? 'checked' : ''}
+                    onchange="updateMultiSelect('${questionNumber}', '${option}', this.checked)">
+                  <span>${option}</span>
+                </label>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+
+    function updateFormData(field, value) {
+      state.formData[field] = value;
+
+      if (field === 'q6') {
+        const reasonSection = document.getElementById('reason-for-avoidance-section');
+        if (reasonSection) {
+          reasonSection.style.display = ['0','1','2','3'].includes(value) ? 'block' : 'none';
+        }
+      }
+
+      if ((field === 'q11' || field === 'q12') && Array.isArray(value)) {
+        const otherToolsSection = document.getElementById('other-tools-section');
+        if (otherToolsSection) {
+          otherToolsSection.style.display = value.includes('Other') ? 'block' : 'none';
+        }
+      }
+
+      if (field === 'subgroup') {
+        const subgroup = state.subgroups.find(sg => sg.id === value);
+        if (subgroup) state.formData.subgroupName = subgroup.name;
+      }
+
+      if (field === 'group') {
+        const group = state.groups.find(g => g.id === value);
+        if (group) state.formData.groupName = group.name;
+      }
+    }
+
+    function updateMultiSelect(questionNumber, option, isChecked) {
+      const field = `q${questionNumber}`;
+      let currentValues = state.formData[field] || [];
+      if (isChecked) {
+        if (!currentValues.includes(option)) currentValues.push(option);
+      } else {
+        currentValues = currentValues.filter(item => item !== option);
+      }
+      state.formData[field] = currentValues;
+
+      if (option === 'Other' && (questionNumber === '11' || questionNumber === '12')) {
+        const otherToolsSection = document.getElementById('other-tools-section');
+        if (otherToolsSection) {
+          const q11 = state.formData['q11'] || [];
+          const q12 = state.formData['q12'] || [];
+          otherToolsSection.style.display = (q11.includes('Other') || q12.includes('Other')) ? 'block' : 'none';
+        }
+      }
+    }
+
+    function nextStep() {
+      if (state.currentStep < state.totalSteps) { state.currentStep++; renderStep(); }
+    }
+
+    function prevStep() {
+      if (state.currentStep > 1) { state.currentStep--; renderStep(); }
+    }
+
+    async function submitAssessment() {
+      try {
+        const fd = state.formData;
+        const submissionData = {
+          groupId: fd.group, groupName: fd.groupName,
+          subgroupId: fd.subgroup, subgroupName: fd.subgroupName,
+          identityMode: fd.identityMode,
+          firstName: fd.firstName, lastName: fd.lastName, email: fd.email,
+          q1: fd.q1, q2: fd.q2, q3: fd.q3, q4: fd.q4, q5: fd.q5, q6: fd.q6,
+          txtReasonForAvoidance: fd.txt_reason_for_avoidance,
+          q7: fd.q7, q8: fd.q8, q9: fd.q9, q10: fd.q10,
+          q11: fd.q11, q12: fd.q12, q13: fd.q13,
+          txtOtherTools: fd.txt_other_tools, txtCurrentUse: fd.txt_current_use,
+          q14: fd.q14, q15: fd.q15, q16: fd.q16, q17: fd.q17, q18: fd.q18, q19: fd.q19,
+          q20: fd.q20, q21: fd.q21, q22: fd.q22, q23: fd.q23,
+          q24: fd.q24, q25: fd.q25,
+          txtTrainingHelp: fd.txt_training_help,
+          txtSpecificTrainingQuestions: fd.txt_specific_training_questions,
+          txtOtherComments: fd.txt_other_comments
+        };
+
+        const response = await fetch('/api/ai/responses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submissionData)
+        });
+
+        if (!response.ok) throw new Error('Failed to submit assessment');
+        state.currentStep = 7;
+        renderStep();
+      } catch (error) {
+        console.error('Error submitting assessment:', error);
+        alert('There was an error submitting your assessment. Please try again.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initAssessment);
+  </script>
+</body>
+</html>
