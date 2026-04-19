@@ -85,6 +85,19 @@ const CompanyDashboard = () => {
     }));
   };
   
+  // Check for threshold notifications
+  const checkThresholds = () => {
+    const percentage = completionPercentage;
+    if (percentage >= 100) {
+      return { message: '🎉 100% Completion Reached!', type: 'success' };
+    } else if (percentage >= 80) {
+      return { message: '🚀 80% Completion Reached!', type: 'warning' };  
+    }
+    return null;
+  };
+  
+  const thresholdNotification = checkThresholds();
+  
   if (loading) {
     return <div className="max-w-6xl mx-auto p-6 text-center py-8">Loading dashboard data...</div>;
   }
@@ -92,6 +105,14 @@ const CompanyDashboard = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-[#434343] mb-6">{companyData.companyName} AI Assessment Dashboard</h1>
+      
+      {thresholdNotification && (
+        <div className={`alert ${thresholdNotification.type === 'success' ? 'alert-success' : 'alert-warning'} mb-6`}>
+          <div>
+            <span>{thresholdNotification.message}</span>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="card bg-base-100 shadow-xl border border-[#434343]">

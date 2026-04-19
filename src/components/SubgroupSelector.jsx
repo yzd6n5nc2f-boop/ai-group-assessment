@@ -27,6 +27,11 @@ const SubgroupSelector = ({ groups, subgroups, formData, onGroupChange, onSubgro
   const selectedGroupObj = groups.find(group => group.id === selectedGroup);
   const hasSubgroups = selectedGroupObj && selectedGroupObj.hasSubgroups;
   
+  // Filter subgroups based on selected group
+  const filteredSubgroups = subgroups.filter(subgroup => 
+    subgroup.groupId === selectedGroup
+  );
+  
   return (
     <div className="card bg-base-100 shadow-xl border border-[#434343]">
       <div className="card-body">
@@ -60,14 +65,15 @@ const SubgroupSelector = ({ groups, subgroups, formData, onGroupChange, onSubgro
               onChange={(e) => handleSubgroupSelect(e.target.value)}
             >
               <option value="" disabled>Select your subgroup</option>
-              {subgroups.map(subgroup => (
+              {filteredSubgroups.map(subgroup => (
                 <option key={subgroup.id} value={subgroup.id}>{subgroup.name}</option>
               ))}
             </select>
           </div>
         )}
         
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-between mt-6">
+          <div></div> {/* Empty div for spacing */}
           <button className="btn btn-primary" onClick={onNext}>Next</button>
         </div>
       </div>

@@ -27,7 +27,7 @@ export const generateAndSendPDF = async (responseData) => {
     doc.text(`Group: ${responseData.groupName || 'Not specified'}`, 20, 50);
     doc.text(`Subgroup: ${responseData.subgroupName || 'Not specified'}`, 20, 60);
     doc.text(`Identity Mode: ${responseData.identityMode}`, 20, 70);
-    doc.text(`Date Completed: ${new Date(responseData.submissionDatetime).toLocaleDateString()}`, 20, 80);
+    doc.text(`Date Completed: ${new Date().toLocaleDateString()}`, 20, 80);
     
     // Add section profiles
     doc.setFontSize(16);
@@ -85,14 +85,24 @@ export const generateAndSendPDF = async (responseData) => {
       }
     });
     
-    // Add summary
+    // Add insights
     doc.setFontSize(16);
     doc.setTextColor(204, 0, 0); // #CC0000
-    doc.text('Summary', 20, doc.lastAutoTable.finalY + 20);
+    doc.text('Key Insights', 20, doc.lastAutoTable.finalY + 20);
     
     doc.setFontSize(12);
     doc.setTextColor(67, 67, 67); // #434343
-    doc.text('This profile helps shape your AI training.', 20, doc.lastAutoTable.finalY + 30);
+    doc.text(`Primary Gap: ${responseData.primary_gap || 'Not identified'}`, 20, doc.lastAutoTable.finalY + 30);
+    doc.text(`Primary Strength: ${responseData.primary_strength || 'Not identified'}`, 20, doc.lastAutoTable.finalY + 40);
+    
+    // Add summary
+    doc.setFontSize(16);
+    doc.setTextColor(204, 0, 0); // #CC0000
+    doc.text('Summary', 20, doc.lastAutoTable.finalY + 60);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(67, 67, 67); // #434343
+    doc.text('This profile helps shape your AI training.', 20, doc.lastAutoTable.finalY + 70);
     
     // Convert PDF to blob
     const pdfBlob = doc.output('blob');
@@ -105,7 +115,11 @@ export const generateAndSendPDF = async (responseData) => {
       `Dear ${name},\n\nThank you for completing the AI Fluency Assessment. Please find your personalized AI Fluency Profile attached.\n\nThis profile will help us tailor the upcoming AI training to better meet your needs.\n\nBest regards,\nThe Training Team`
     );
     
-    return emailResult;
+    return {
+      success: true,
+      message: 'PDF generated and email sent successfully',
+      emailResult: emailResult
+    };
   } catch (error) {
     console.error('Error generating and sending PDF:', error);
     throw error;

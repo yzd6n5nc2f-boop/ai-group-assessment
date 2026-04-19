@@ -117,6 +117,76 @@ const TeamReportGenerator = ({ group, subgroup }) => {
     },
   };
   
+  // Distribution data for each section
+  const distributionData = [
+    {
+      section: 'Mindset',
+      data: [10, 25, 30, 20, 15], // Distribution percentages for Novice to Expert
+      labels: ['Novice', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+    },
+    {
+      section: 'Usage',
+      data: [5, 20, 35, 25, 15],
+      labels: ['Novice', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+    },
+    {
+      section: 'Prompting',
+      data: [15, 30, 25, 20, 10],
+      labels: ['Novice', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+    },
+    {
+      section: 'Research',
+      data: [20, 25, 20, 20, 15],
+      labels: ['Novice', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+    },
+    {
+      section: 'Workflow',
+      data: [25, 20, 15, 20, 20],
+      labels: ['Novice', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+    }
+  ];
+  
+  // Create distribution charts
+  const distributionCharts = distributionData.map((sectionData, index) => {
+    const data = {
+      labels: sectionData.labels,
+      datasets: [
+        {
+          label: 'Distribution (%)',
+          data: sectionData.data,
+          backgroundColor: [
+            '#999999',
+            '#F4CCCD',
+            '#EB9A99',
+            '#E06667',
+            '#CC0000'
+          ],
+        }
+      ]
+    };
+    
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: `${sectionData.section} Distribution`,
+        },
+      },
+    };
+    
+    return (
+      <div key={index} className="card bg-base-100 shadow-xl border border-[#434343] mb-8">
+        <div className="card-body">
+          <Bar data={data} options={options} />
+        </div>
+      </div>
+    );
+  });
+  
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-[#434343] mb-6">Team AI Profile Report</h1>
@@ -165,6 +235,9 @@ const TeamReportGenerator = ({ group, subgroup }) => {
           <Bar data={chartData} options={chartOptions} />
         </div>
       </div>
+      
+      <h2 className="text-2xl font-bold text-[#434343] mb-6">Section Distribution Charts</h2>
+      {distributionCharts}
       
       <div className="card bg-base-100 shadow-xl border border-[#434343]">
         <div className="card-body">

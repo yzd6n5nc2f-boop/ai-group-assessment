@@ -116,3 +116,29 @@ export const getAnonymizationFlags = (identityMode) => {
     include_in_team_aggregate: true // Always included in aggregates
   };
 };
+
+// Function to determine primary gap and strength
+export const getProfileInsights = (profileValues) => {
+  const sections = [
+    { name: 'Mindset', value: profileValues.mindset_profile_value },
+    { name: 'Usage', value: profileValues.usage_profile_value },
+    { name: 'Prompting', value: profileValues.prompting_profile_value },
+    { name: 'Research', value: profileValues.research_profile_value },
+    { name: 'Workflow', value: profileValues.workflow_profile_value }
+  ];
+  
+  // Find the section with the lowest score (primary gap)
+  const primaryGap = sections.reduce((min, section) => 
+    section.value < min.value ? section : min
+  );
+  
+  // Find the section with the highest score (primary strength)
+  const primaryStrength = sections.reduce((max, section) => 
+    section.value > max.value ? section : max
+  );
+  
+  return {
+    primary_gap: primaryGap.name,
+    primary_strength: primaryStrength.name
+  };
+};

@@ -4,7 +4,7 @@ import IdentitySelector from './IdentitySelector';
 import QuestionsSection from './QuestionsSection';
 import { fetchGroups, fetchSubgroups, saveResponseToAirtable } from '../services/airtableService';
 import { generateAndSendPDF } from '../services/pdfService';
-import { calculateProfileValues, getAnonymizationFlags } from '../utils/calculationUtils';
+import { calculateProfileValues, getAnonymizationFlags, getProfileInsights } from '../utils/calculationUtils';
 
 const AssessmentForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -126,6 +126,9 @@ const AssessmentForm = () => {
       // Calculate profile values
       const profileValues = calculateProfileValues(formData.answers);
       
+      // Get profile insights
+      const profileInsights = getProfileInsights(profileValues);
+      
       // Get anonymization flags
       const anonymizationFlags = getAnonymizationFlags(formData.identityMode);
       
@@ -134,6 +137,7 @@ const AssessmentForm = () => {
         ...formData,
         ...profileValues,
         ...anonymizationFlags,
+        ...profileInsights,
         submissionDatetime: new Date().toISOString()
       };
       
@@ -237,8 +241,7 @@ const AssessmentForm = () => {
         return (
           <QuestionsSection 
             title="Mindset, Attitude and Fears"
-            questions={[
-              {
+            questions={[{
                 id: 'q1',
                 text: 'How do you currently feel about AI in your work?',
                 type: 'single',
@@ -315,8 +318,7 @@ const AssessmentForm = () => {
                 text: 'If yes or sometimes, what is the main reason?',
                 type: 'text',
                 condition: (answers) => ['0', '1', '2', '3'].includes(answers.q6)
-              }
-            ]}
+              }]}
             answers={formData.answers}
             freeText={formData.freeText}
             onAnswerChange={handleAnswerChange}
@@ -329,8 +331,7 @@ const AssessmentForm = () => {
         return (
           <QuestionsSection 
             title="Usage, Frequency and Context"
-            questions={[
-              {
+            questions={[{
                 id: 'q7',
                 text: 'How often do you use AI tools of any kind?',
                 type: 'single',
@@ -438,8 +439,7 @@ const AssessmentForm = () => {
                 id: 'txt_current_use',
                 text: 'What do you currently use AI for, if anything?',
                 type: 'text'
-              }
-            ]}
+              }]}
             answers={formData.answers}
             freeText={formData.freeText}
             onAnswerChange={handleAnswerChange}
@@ -452,8 +452,7 @@ const AssessmentForm = () => {
         return (
           <QuestionsSection 
             title="Prompting and Core Skill"
-            questions={[
-              {
+            questions={[{
                 id: 'q14',
                 text: 'How would you describe the way you usually prompt AI?',
                 type: 'single',
@@ -524,8 +523,7 @@ const AssessmentForm = () => {
                   'Good',
                   'Very good'
                 ]
-              }
-            ]}
+              }]}
             answers={formData.answers}
             freeText={formData.freeText}
             onAnswerChange={handleAnswerChange}
@@ -538,8 +536,7 @@ const AssessmentForm = () => {
         return (
           <QuestionsSection 
             title="Research, Judgement and Quality of Use"
-            questions={[
-              {
+            questions={[{
                 id: 'q20',
                 text: 'Have you used AI for deeper research rather than just quick answers?',
                 type: 'single',
@@ -586,8 +583,7 @@ const AssessmentForm = () => {
                   'Regularly',
                   'I deliberately use different tools for different strengths'
                 ]
-              }
-            ]}
+              }]}
             answers={formData.answers}
             freeText={formData.freeText}
             onAnswerChange={handleAnswerChange}
@@ -600,8 +596,7 @@ const AssessmentForm = () => {
         return (
           <QuestionsSection 
             title="Projects, Customisation and Workflow Maturity"
-            questions={[
-              {
+            questions={[{
                 id: 'q24',
                 text: 'Have you used Projects, custom GPTs, Gems, or similar AI workspaces?',
                 type: 'single',
@@ -639,8 +634,7 @@ const AssessmentForm = () => {
                 id: 'txt_other_comments',
                 text: 'Any other comments about AI, your role, or your current experience?',
                 type: 'text'
-              }
-            ]}
+              }]}
             answers={formData.answers}
             freeText={formData.freeText}
             onAnswerChange={handleAnswerChange}
@@ -685,11 +679,11 @@ const AssessmentForm = () => {
         <div className="mt-8">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
-              className="progress-bar h-2.5 rounded-full" 
+              className="progress-bar h-2.5 rounded-full bg-[#CC0000]" 
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             ></div>
           </div>
-          <div className="text-right text-sm mt-2">Step {currentStep} of {totalSteps}</div>
+          <div className="text-right text-sm mt-2 text-[#434343]">Step {currentStep} of {totalSteps}</div>
         </div>
       )}
     </div>
