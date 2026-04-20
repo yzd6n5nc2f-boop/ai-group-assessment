@@ -9,74 +9,76 @@ const GroupSelector = ({ groups, subgroups, formData, onGroupChange, onSubgroupC
     setSelectedSubgroup(formData.subgroup || '');
   }, [formData]);
   
-  const handleGroupSelect = (groupId) => {
+  const handleGroupSelect = async (e) => {
+    const groupId = e.target.value;
     setSelectedGroup(groupId);
-    onGroupChange(groupId);
+    await onGroupChange(groupId);
     
     // Reset subgroup when group changes
     setSelectedSubgroup('');
     onSubgroupChange('');
   };
   
-  const handleSubgroupSelect = (subgroupId) => {
-    setSelectedSubgroup(subgroupId);
-    onSubgroupChange(subgroupId);
+  const handleSubgroupSelect = async (e) => {
+    const subgroupName = e.target.value;
+    setSelectedSubgroup(subgroupName);
+    await onSubgroupChange(subgroupName);
   };
   
-  // Find the selected group to check if it has subgroups
-  const selectedGroupObj = groups.find(group => group.id === selectedGroup);
-  const hasSubgroups = selectedGroupObj && selectedGroupObj.hasSubgroups;
-  
-  // Filter subgroups based on selected group
-  const filteredSubgroups = subgroups.filter(subgroup => 
-    subgroup.groupId === selectedGroup
-  );
+  // Add defensive checks for groups and subgroups
+  const validGroups = Array.isArray(groups) ? groups : [];
+  const validSubgroups = Array.isArray(subgroups) ? subgroups : [];
   
   return (
-    <div className="card bg-base-100 shadow-xl border border-[#434343]">
-      <div className="card-body">
-        <h2 className="card-title text-2xl primary-color">Group Selection</h2>
-        <p className="mb-4">Please select which group you belong to:</p>
-        
-        <div className="form-control mb-4">
-          <label className="label">
-            <span className="label-text">Which group are you part of?</span>
-          </label>
-          <select 
-            className="select select-bordered w-full border-color"
-            value={selectedGroup}
-            onChange={(e) => handleGroupSelect(e.target.value)}
+    <div className="selector-container">
+      <h2>Select Your Group and Subgroup</h2>
+      
+      <div className="form-group">
+        <label htmlFor="group-select">Group:</label>
+        <select 
+          id="group-select"
+          value={selectedGroup}
+          onChange={handleGroupSelect}
+          className="form-control"
+        >
+          <option value="">-- Select a Group --</option>
+          {validGroups.map((group) => (
+            // Ensure group and group.fields exist before accessing
+            <option key={group.id} value={group.id}>
+              {group.fields?.Name || 'Unnamed Group'}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      {selectedGroup && validSubgroups.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="subgroup-select">Subgroup:</label>
+          <select
+            id="subgroup-select"
+            value={selectedSubgroup}
+            onChange={handleSubgroupSelect}
+            className="form-control"
           >
-            <option value="" disabled>Select your group</option>
-            {groups.map(group => (
-              <option key={group.id} value={group.id}>{group.name}</option>
-            ))}
+            <option value="">-- Select a Subgroup --</option>
+            {validSubgroups
+              .filter(subgroup => subgroup.fields?.Group?.[0] === selectedGroup)
+              .map((subgroup) => (
+                <option key={subgroup.id} value={subgroup.fields?.Name || ''}>
+                  {subgroup.fields?.Name || 'Unnamed Subgroup'}
+                </option>
+              ))}
           </select>
         </div>
-        
-        {hasSubgroups && (
-          <div className="form-control mb-4">
-            <label className="label">
-              <span className="label-text">Which division or subgroup are you part of?</span>
-            </label>
-            <select 
-              className="select select-bordered w-full border-color"
-              value={selectedSubgroup}
-              onChange={(e) => handleSubgroupSelect(e.target.value)}
-            >
-              <option value="" disabled>Select your subgroup</option>
-              {filteredSubgroups.map(subgroup => (
-                <option key={subgroup.id} value={subgroup.id}>{subgroup.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        
-        <div className="flex justify-between mt-6">
-          <div></div> {/* Empty div for spacing */}
-          <button className="btn btn-primary" onClick={onNext}>Next</button>
-        </div>
-      </div>
+      )}
+      
+      <button 
+        onClick={onNext}
+        disabled={!selectedGroup || (validSubgroups.length > 0 && !selectedSubgroup)}
+        className="btn btn-primary mt-3"
+      >
+        Next
+      </button>
     </div>
   );
 };
