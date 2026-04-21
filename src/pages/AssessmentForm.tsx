@@ -225,7 +225,7 @@ export function AssessmentForm() {
   
   // Navigation functions
   const nextStep = () => {
-    if (step < 7) {
+    if (step < 8) {
       setStep(step + 1);
     }
   };
@@ -335,9 +335,15 @@ export function AssessmentForm() {
         updateFormData={updateFormData}
         updateMultiSelect={updateMultiSelect}
         prevStep={prevStep}
+        nextStep={nextStep}
+      />;
+      case 7: return <FinalQuestionsStep 
+        formData={formData}
+        updateFormData={updateFormData}
+        prevStep={prevStep}
         submitAssessment={submitAssessment} 
       />;
-      case 7: return <CompletionStep formData={formData} />;
+      case 8: return <CompletionStep formData={formData} />;
       default: return <GroupSelectionStep 
         formData={formData} 
         groups={groups} 
@@ -351,19 +357,19 @@ export function AssessmentForm() {
   };
   
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="assessment-survey max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
       <div className="p-1 bg-primary"></div>
       <div className="p-8">
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
           <div 
             className="bg-primary h-2.5 rounded-full" 
-            style={{ width: `${((step - 1) / 6) * 100}%` }}
+            style={{ width: `${((step - 1) / 7) * 100}%` }}
           ></div>
         </div>
         <div className="flex justify-between text-xs text-gray-500 mb-8">
-          <span>Step {step} of 7</span>
-          <span>{Math.round(((step - 1) / 6) * 100)}% Complete</span>
+          <span>Step {step} of 8</span>
+          <span>{Math.round(((step - 1) / 7) * 100)}% Complete</span>
         </div>
         
         {/* Step Content */}
@@ -916,13 +922,13 @@ function RemainingSectionsStep({
   updateFormData, 
   updateMultiSelect, 
   prevStep, 
-  submitAssessment 
+  nextStep
 }: { 
   formData: FormData; 
   updateFormData: (field: keyof FormData, value: any) => void; 
   updateMultiSelect: (questionNumber: string, option: string, isChecked: boolean) => void; 
   prevStep: () => void; 
-  submitAssessment: () => void; 
+  nextStep: () => void; 
 }) {
   const promptingQuestions = [
     {
@@ -1154,44 +1160,67 @@ function RemainingSectionsStep({
             </div>
           ))}
         </div>
-        
-        {/* Additional Free-text Questions */}
-        <div className="space-y-6">
-          <div className="form-control">
-            <label className="label font-bold">What would you most like AI training to help you with?</label>
-            <textarea 
-              className="textarea textarea-bordered" 
-              rows={3} 
-              placeholder="Describe your training needs..." 
-              value={formData.txt_training_help}
-              onChange={(e) => updateFormData('txt_training_help', e.target.value)}
-            />
-          </div>
-          
-          <div className="form-control">
-            <label className="label font-bold">Do you have any specific questions you would like the training to cover?</label>
-            <textarea 
-              className="textarea textarea-bordered" 
-              rows={3} 
-              placeholder="List your questions..." 
-              value={formData.txt_specific_training_questions}
-              onChange={(e) => updateFormData('txt_specific_training_questions', e.target.value)}
-            />
-          </div>
-          
-          <div className="form-control">
-            <label className="label font-bold">Any other comments about AI, your role, or your current experience?</label>
-            <textarea 
-              className="textarea textarea-bordered" 
-              rows={3} 
-              placeholder="Share any additional thoughts..." 
-              value={formData.txt_other_comments}
-              onChange={(e) => updateFormData('txt_other_comments', e.target.value)}
-            />
-          </div>
-        </div>
       </div>
       
+      <div className="flex justify-between mt-8">
+        <button className="btn btn-ghost" onClick={prevStep}>Previous</button>
+        <button className="btn btn-primary" onClick={nextStep}>Next</button>
+      </div>
+    </div>
+  );
+}
+
+function FinalQuestionsStep({
+  formData,
+  updateFormData,
+  prevStep,
+  submitAssessment
+}: {
+  formData: FormData;
+  updateFormData: (field: keyof FormData, value: any) => void;
+  prevStep: () => void;
+  submitAssessment: () => void;
+}) {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-2 text-center">Final Questions</h2>
+      <p className="mb-6 text-center text-gray-600">A few closing questions to help tailor the training.</p>
+
+      <div className="space-y-6">
+        <div className="form-control">
+          <label className="label font-bold">What would you most like AI training to help you with?</label>
+          <textarea
+            className="textarea textarea-bordered"
+            rows={3}
+            placeholder="Describe your training needs..."
+            value={formData.txt_training_help}
+            onChange={(e) => updateFormData('txt_training_help', e.target.value)}
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label font-bold">Do you have any specific questions you would like the training to cover?</label>
+          <textarea
+            className="textarea textarea-bordered"
+            rows={3}
+            placeholder="List your questions..."
+            value={formData.txt_specific_training_questions}
+            onChange={(e) => updateFormData('txt_specific_training_questions', e.target.value)}
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label font-bold">Any other comments about AI, your role, or your current experience?</label>
+          <textarea
+            className="textarea textarea-bordered"
+            rows={3}
+            placeholder="Share any additional thoughts..."
+            value={formData.txt_other_comments}
+            onChange={(e) => updateFormData('txt_other_comments', e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="flex justify-between mt-8">
         <button className="btn btn-ghost" onClick={prevStep}>Previous</button>
         <button className="btn btn-primary" onClick={submitAssessment}>Submit Assessment</button>

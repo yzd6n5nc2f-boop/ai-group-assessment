@@ -33,19 +33,37 @@
     .bg-secondary-3 { background-color: var(--secondary-3); }
     .bg-secondary-4 { background-color: var(--secondary-4); }
     .bg-secondary-5 { background-color: var(--secondary-5); }
+    .survey-box { border: 1px solid var(--primary-main); }
+    .radio-primary:checked,
+    .radio:checked {
+      background-color: var(--primary-main);
+      border-color: var(--primary-main);
+    }
+    .select:focus,
+    .select-bordered:focus,
+    .textarea:focus,
+    .textarea-bordered:focus {
+      border-color: var(--primary-main);
+      outline: 2px solid rgba(204, 0, 0, 0.2);
+      outline-offset: 2px;
+    }
+    select option:checked {
+      background: var(--primary-main);
+      color: #ffffff;
+    }
   </style>
 </head>
 <body class="bg-background text-body-text" data-theme="winter">
   <div id="app" class="min-h-screen flex flex-col">
     <main class="flex-grow container mx-auto px-4 py-8">
-      <div id="assessment-container" class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden"></div>
+      <div id="assessment-container" class="survey-box max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden"></div>
     </main>
   </div>
 
   <script>
     const state = {
       currentStep: 1,
-      totalSteps: 7,
+      totalSteps: 8,
       formData: {
         group: '', groupName: '', subgroup: '', subgroupName: '',
         identityMode: '', firstName: '', lastName: '', email: '',
@@ -98,7 +116,8 @@
         case 4: renderMindsetSection(); break;
         case 5: renderUsageSection(); break;
         case 6: renderRemainingSections(); break;
-        case 7: renderCompletion(); break;
+        case 7: renderFinalQuestions(); break;
+        case 8: renderCompletion(); break;
         default: renderGroupSelection();
       }
       updateProgressBar();
@@ -334,19 +353,31 @@
               ${renderQuestion(24, "Have you used Projects, custom GPTs, Gems, or similar AI workspaces?", ["Never","I have heard of them but not used them","Tried once or twice","Used them a few times","Use them regularly for defined purposes"])}
               ${renderQuestion(25, "If you have used Projects or custom GPTs, how advanced was your setup?", ["I have not used them","Used defaults only","Added a custom prompt or instruction","Added a custom prompt plus files or knowledge","Built a bespoke setup for a repeated task or workflow"])}
             </div>
-            <div class="space-y-6">
-              <div class="form-control">
-                <label class="label font-bold">What would you most like AI training to help you with?</label>
-                <textarea class="textarea textarea-bordered" rows="3" placeholder="Describe your training needs..." oninput="updateFormData('txt_training_help', this.value)">${state.formData.txt_training_help}</textarea>
-              </div>
-              <div class="form-control">
-                <label class="label font-bold">Do you have any specific questions you would like the training to cover?</label>
-                <textarea class="textarea textarea-bordered" rows="3" placeholder="List your questions..." oninput="updateFormData('txt_specific_training_questions', this.value)">${state.formData.txt_specific_training_questions}</textarea>
-              </div>
-              <div class="form-control">
-                <label class="label font-bold">Any other comments about AI, your role, or your current experience?</label>
-                <textarea class="textarea textarea-bordered" rows="3" placeholder="Share any additional thoughts..." oninput="updateFormData('txt_other_comments', this.value)">${state.formData.txt_other_comments}</textarea>
-              </div>
+          </div>
+          <div class="flex justify-between mt-8">
+            <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>`;
+    }
+
+    function renderFinalQuestions() {
+      assessmentContainer.innerHTML = `
+        <div class="p-8">
+          <h2 class="text-2xl font-bold mb-2 text-center">Final Questions</h2>
+          <p class="mb-6 text-center text-gray-600">A few closing questions to help tailor the training.</p>
+          <div class="space-y-6">
+            <div class="form-control">
+              <label class="label font-bold">What would you most like AI training to help you with?</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="Describe your training needs..." oninput="updateFormData('txt_training_help', this.value)">${state.formData.txt_training_help}</textarea>
+            </div>
+            <div class="form-control">
+              <label class="label font-bold">Do you have any specific questions you would like the training to cover?</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="List your questions..." oninput="updateFormData('txt_specific_training_questions', this.value)">${state.formData.txt_specific_training_questions}</textarea>
+            </div>
+            <div class="form-control">
+              <label class="label font-bold">Any other comments about AI, your role, or your current experience?</label>
+              <textarea class="textarea textarea-bordered" rows="3" placeholder="Share any additional thoughts..." oninput="updateFormData('txt_other_comments', this.value)">${state.formData.txt_other_comments}</textarea>
             </div>
           </div>
           <div class="flex justify-between mt-8">
@@ -508,7 +539,7 @@
         });
 
         if (!response.ok) throw new Error('Failed to submit assessment');
-        state.currentStep = 7;
+        state.currentStep = 8;
         renderStep();
       } catch (error) {
         console.error('Error submitting assessment:', error);

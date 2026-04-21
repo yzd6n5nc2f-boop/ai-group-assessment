@@ -31,6 +31,54 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #65a30d;
 }
 
+.assessment-survey {
+  --survey-red: #cc0000;
+  border: 1px solid var(--survey-red);
+}
+
+.assessment-survey .btn-primary {
+  background-color: var(--survey-red);
+  border-color: var(--survey-red);
+  color: #ffffff;
+}
+
+.assessment-survey .btn-primary:hover {
+  background-color: #990000;
+  border-color: #990000;
+}
+
+.assessment-survey .bg-primary {
+  background-color: var(--survey-red);
+}
+
+.assessment-survey .text-primary {
+  color: var(--survey-red);
+}
+
+.assessment-survey .border-primary {
+  border-color: var(--survey-red);
+}
+
+.assessment-survey .radio-primary:checked,
+.assessment-survey .radio:checked {
+  background-color: var(--survey-red);
+  border-color: var(--survey-red);
+}
+
+.assessment-survey .select:focus,
+.assessment-survey .select-bordered:focus,
+.assessment-survey .textarea:focus,
+.assessment-survey .textarea-bordered:focus {
+  border-color: var(--survey-red);
+  outline: 2px solid rgba(204, 0, 0, 0.2);
+  outline-offset: 2px;
+}
+
+.assessment-survey select option:checked {
+  background: var(--survey-red);
+  color: #ffffff;
+}
+
 .card {
   border-radius: 1.75rem;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
