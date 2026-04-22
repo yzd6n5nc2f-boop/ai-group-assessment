@@ -123,12 +123,16 @@
     // Initialize the assessment
     async function initAssessment() {
       try {
-        // Load groups from Airtable (mock data for now)
-        state.groups = [
-          { id: '1', name: 'Marketing Team' },
-          { id: '2', name: 'Engineering Department' },
-          { id: '3', name: 'Sales Division' }
-        ];
+        const response = await fetch('/api/ai/groups');
+        if (response.ok) {
+          state.groups = await response.json();
+        } else {
+          state.groups = [
+            { id: 'g1', name: 'Marketing Team' },
+            { id: 'g2', name: 'Engineering Department' },
+            { id: 'g3', name: 'Sales Division' }
+          ];
+        }
         
         // Render first step
         renderStep();
@@ -251,24 +255,28 @@
     }
 
     // Handle group change
-    function handleGroupChange(groupId) {
+    async function handleGroupChange(groupId) {
       updateFormData('group', groupId);
       updateFormData('subgroup', '');
+      state.formData.subgroupName = '';
+      const group = state.groups.find(item => item.id === groupId);
+      if (group) updateFormData('groupName', group.name);
       
-      // Mock subgroup data based on group
-      if (groupId === '1') {
-        state.subgroups = [
-          { id: '101', name: 'Digital Marketing' },
-          { id: '102', name: 'Content Creation' }
-        ];
-        state.showSubgroup = true;
-      } else if (groupId === '2') {
-        state.subgroups = [
-          { id: '201', name: 'Frontend Team' },
-          { id: '202', name: 'Backend Team' },
-          { id: '203', name: 'DevOps' }
-        ];
-        state.showSubgroup = true;
+      if (groupId) {
+        try {
+          const response = await fetch(`/api/ai/subgroups/${groupId}`);
+          if (response.ok) {
+            state.subgroups = await response.json();
+            state.showSubgroup = state.subgroups.length > 0;
+          } else {
+            state.subgroups = [];
+            state.showSubgroup = false;
+          }
+        } catch (error) {
+          console.error('Error loading subgroups:', error);
+          state.subgroups = [];
+          state.showSubgroup = false;
+        }
       } else {
         state.subgroups = [];
         state.showSubgroup = false;
@@ -279,6 +287,8 @@
 
     function updateSubgroup(subgroupId) {
       updateFormData('subgroup', subgroupId);
+      const subgroup = state.subgroups.find(item => item.id === subgroupId);
+      if (subgroup) updateFormData('subgroupName', subgroup.name);
       renderStep();
     }
 
@@ -822,13 +832,62 @@
 
     async function submitAssessment() {
       try {
-        // In a real implementation, this would send data to Airtable
-        console.log('Submitting assessment data:', state.formData);
-        
-        // Calculate profile values (mock implementation)
-        calculateProfileValues();
-        
-        // Move to completion step
+        const fd = state.formData;
+        const group = state.groups.find(item => item.id === fd.group);
+        const subgroup = state.subgroups.find(item => item.id === fd.subgroup);
+        const submissionData = {
+          groupId: fd.group,
+          groupName: fd.groupName || group?.name || '',
+          subgroupId: fd.subgroup,
+          subgroupName: fd.subgroupName || subgroup?.name || '',
+          identityMode: fd.identityMode,
+          firstName: fd.firstName,
+          lastName: fd.lastName,
+          email: fd.email,
+          q1: fd.q1,
+          q2: fd.q2,
+          q3: fd.q3,
+          q4: fd.q4,
+          q5: fd.q5,
+          q6: fd.q6,
+          txtReasonForAvoidance: fd.txt_reason_for_avoidance,
+          q7: fd.q7,
+          q8: fd.q8,
+          q9: fd.q9,
+          q10: fd.q10,
+          q11: fd.q11,
+          q12: fd.q12,
+          q13: fd.q13,
+          txtOtherTools: fd.txt_other_tools,
+          txtCurrentUse: fd.txt_current_use,
+          q14: fd.q14,
+          q15: fd.q15,
+          q16: fd.q16,
+          q17: fd.q17,
+          q18: fd.q18,
+          q19: fd.q19,
+          q20: fd.q20,
+          q21: fd.q21,
+          q22: fd.q22,
+          q23: fd.q23,
+          q24: fd.q24,
+          q25: fd.q25,
+          txtTrainingHelp: fd.txt_training_help,
+          txtSpecificTrainingQuestions: fd.txt_specific_training_questions,
+          txtOtherComments: fd.txt_other_comments
+        };
+
+        const response = await fetch('/api/ai/responses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submissionData)
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => ({}));
+          throw new Error(errorBody.error || 'Failed to submit assessment');
+        }
+
         state.currentStep = 8;
         renderStep();
       } catch (error) {
