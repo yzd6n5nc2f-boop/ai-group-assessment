@@ -140,13 +140,21 @@ function mapResponseToAirtableFields(data) {
 async function createResponseRecord(data) {
   const config = requireResponsesConfig();
   const fields = mapResponseToAirtableFields(data);
-  const result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
-    method: "POST",
-    body: JSON.stringify({
-      records: [{ fields }],
-      typecast: true,
-    }),
-  });
+  let result;
+  try {
+    result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
+      method: "POST",
+      body: JSON.stringify({
+        records: [{ fields }],
+        typecast: true,
+      }),
+    });
+  } catch (error) {
+    if (error.status === 422) {
+      error.message = `${error.message}. Check that the Airtable table has matching field names such as response_id, group_name, email, q1-q25, and txt_training_help.`;
+    }
+    throw error;
+  }
 
   return result.records?.[0];
 }
@@ -188,6 +196,7 @@ module.exports = {
   createResponseRecord,
   fallbackGroups,
   fallbackSubgroups,
+  getAirtableConfig,
   listGroups,
   listSubgroups,
 };
