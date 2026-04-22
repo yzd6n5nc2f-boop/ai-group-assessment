@@ -28,7 +28,7 @@ function formatName(data) {
   return [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || "Anonymous respondent";
 }
 
-function buildNotificationHtml(data, airtableRecordId) {
+function buildNotificationHtml(data) {
   const answerRows = Array.from({ length: 25 }, (_, index) => {
     const key = `q${index + 1}`;
     const value = Array.isArray(data[key]) ? data[key].join(", ") : data[key];
@@ -44,7 +44,6 @@ function buildNotificationHtml(data, airtableRecordId) {
       <tr><td style="padding:4px 10px;font-weight:bold;">Group</td><td style="padding:4px 10px;">${escapeHtml(data.groupName || data.groupId || "Not provided")}</td></tr>
       <tr><td style="padding:4px 10px;font-weight:bold;">Subgroup</td><td style="padding:4px 10px;">${escapeHtml(data.subgroupName || data.subgroupId || "Not provided")}</td></tr>
       <tr><td style="padding:4px 10px;font-weight:bold;">Identity mode</td><td style="padding:4px 10px;">${escapeHtml(data.identityMode || "Not provided")}</td></tr>
-      <tr><td style="padding:4px 10px;font-weight:bold;">Airtable record</td><td style="padding:4px 10px;">${escapeHtml(airtableRecordId || "Not recorded")}</td></tr>
     </table>
 
     <h3>Final questions</h3>
@@ -82,9 +81,11 @@ async function brevoRequest(path, apiKey, body) {
   return data;
 }
 
-async function sendAssessmentNotification(data, airtableRecordId) {
+async function sendAssessmentNotification(data) {
   if (!isBrevoConfigured()) {
-    return { skipped: true, reason: "Brevo is not configured" };
+    const error = new Error("Brevo is not configured. Add BREVO_API_KEY, BREVO_SENDER_EMAIL, and BREVO_NOTIFICATION_TO_EMAIL in Azure environment variables.");
+    error.status = 500;
+    throw error;
   }
 
   const config = getBrevoConfig();
@@ -108,7 +109,7 @@ async function sendAssessmentNotification(data, airtableRecordId) {
         }
       : undefined,
     subject: `New AI assessment submission - ${respondent}`,
-    htmlContent: buildNotificationHtml(data, airtableRecordId),
+    htmlContent: buildNotificationHtml(data),
   });
 
   return { skipped: false, messageId: result?.messageId };
