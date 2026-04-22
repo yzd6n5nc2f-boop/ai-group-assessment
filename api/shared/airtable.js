@@ -151,39 +151,81 @@ function mapMinimalResponseToAirtableFields(data) {
   };
 }
 
+function mapDisplayNameResponseToAirtableFields(data) {
+  const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+  return {
+    "Response ID": `resp_${Date.now()}`,
+    "Group Name": data.groupName || data.groupId || "Not provided",
+    "Subgroup Name": data.subgroupName || data.subgroupId || "Not provided",
+    "Identity Mode": data.identityMode || "Not provided",
+    "First Name": data.firstName || "",
+    "Last Name": data.lastName || "",
+    Email: data.email || "",
+    "Submitted At": new Date().toISOString(),
+    "Submission Summary": JSON.stringify({
+      name: fullName || "Anonymous respondent",
+      group: data.groupName || data.groupId,
+      subgroup: data.subgroupName || data.subgroupId,
+      identityMode: data.identityMode,
+      answers: Object.fromEntries(Array.from({ length: 25 }, (_, index) => {
+        const key = `q${index + 1}`;
+        return [key, data[key]];
+      })),
+      finalQuestions: {
+        trainingHelp: data.txtTrainingHelp,
+        specificTrainingQuestions: data.txtSpecificTrainingQuestions,
+        otherComments: data.txtOtherComments,
+      },
+    }),
+  };
+}
+
+function mapNameOnlyResponseToAirtableFields(data) {
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ") || "Anonymous respondent";
+  return {
+    Name: `AI assessment - ${name} - ${new Date().toISOString()}`,
+  };
+}
+
+async function createAirtableRecord(config, fields) {
+  const result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
+    method: "POST",
+    body: JSON.stringify({
+      records: [{ fields }],
+      typecast: true,
+    }),
+  });
+
+  return result.records?.[0];
+}
+
 async function createResponseRecord(data) {
   const config = requireResponsesConfig();
-  const fields = mapResponseToAirtableFields(data);
-  let result;
-  try {
-    result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
-      method: "POST",
-      body: JSON.stringify({
-        records: [{ fields }],
-        typecast: true,
-      }),
-    });
-  } catch (error) {
-    if (error.status !== 422) {
-      throw error;
-    }
+  const attempts = [
+    mapResponseToAirtableFields(data),
+    mapDisplayNameResponseToAirtableFields(data),
+    mapMinimalResponseToAirtableFields(data),
+    mapNameOnlyResponseToAirtableFields(data),
+    {},
+  ];
+  const errors = [];
 
-    const minimalFields = mapMinimalResponseToAirtableFields(data);
+  for (const fields of attempts) {
     try {
-      result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
-        method: "POST",
-        body: JSON.stringify({
-          records: [{ fields: minimalFields }],
-          typecast: true,
-        }),
-      });
-    } catch (fallbackError) {
-      fallbackError.message = `${fallbackError.message}. Airtable rejected both the full and minimal payload. Ensure the Responses table has at least these exact fields: response_id, group_name, subgroup_name, identity_mode, first_name, last_name, email, submission_datetime.`;
-      throw fallbackError;
+      return await createAirtableRecord(config, fields);
+    } catch (error) {
+      errors.push(error.message);
+      if (error.status !== 422) {
+        throw error;
+      }
     }
   }
 
-  return result.records?.[0];
+  const error = new Error(
+    `Airtable rejected all supported payloads. Check the Responses table field names. Last errors: ${errors.join(" | ")}`
+  );
+  error.status = 422;
+  throw error;
 }
 
 async function listGroups() {
