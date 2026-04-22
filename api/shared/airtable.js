@@ -80,6 +80,7 @@ function valueOrNull(value) {
 
 function mapResponseToAirtableFields(data) {
   const responseId = `resp_${Date.now()}`;
+  const submittedAt = new Date().toISOString();
   const fieldPairs = [
     ["response_id", responseId],
     ["group_id", data.groupId],
@@ -94,7 +95,7 @@ function mapResponseToAirtableFields(data) {
     ["last_name", data.lastName],
     ["email", data.email],
     ["email_provided", Boolean(data.email)],
-    ["submission_datetime", new Date().toISOString()],
+    ["submission_datetime", submittedAt],
     ["assessment_version", "1.0"],
     ["consent_text_shown", "AI Fluency Assessment Consent Text"],
     ["q1", data.q1],
@@ -137,6 +138,19 @@ function mapResponseToAirtableFields(data) {
   );
 }
 
+function mapMinimalResponseToAirtableFields(data) {
+  return {
+    response_id: `resp_${Date.now()}`,
+    group_name: data.groupName || data.groupId || "Not provided",
+    subgroup_name: data.subgroupName || data.subgroupId || "Not provided",
+    identity_mode: data.identityMode || "Not provided",
+    first_name: data.firstName || "",
+    last_name: data.lastName || "",
+    email: data.email || "",
+    submission_datetime: new Date().toISOString(),
+  };
+}
+
 async function createResponseRecord(data) {
   const config = requireResponsesConfig();
   const fields = mapResponseToAirtableFields(data);
@@ -150,10 +164,23 @@ async function createResponseRecord(data) {
       }),
     });
   } catch (error) {
-    if (error.status === 422) {
-      error.message = `${error.message}. Check that the Airtable table has matching field names such as response_id, group_name, email, q1-q25, and txt_training_help.`;
+    if (error.status !== 422) {
+      throw error;
     }
-    throw error;
+
+    const minimalFields = mapMinimalResponseToAirtableFields(data);
+    try {
+      result = await airtableRequest(airtableUrl(config.baseId, config.responsesTable), config.token, {
+        method: "POST",
+        body: JSON.stringify({
+          records: [{ fields: minimalFields }],
+          typecast: true,
+        }),
+      });
+    } catch (fallbackError) {
+      fallbackError.message = `${fallbackError.message}. Airtable rejected both the full and minimal payload. Ensure the Responses table has at least these exact fields: response_id, group_name, subgroup_name, identity_mode, first_name, last_name, email, submission_datetime.`;
+      throw fallbackError;
+    }
   }
 
   return result.records?.[0];

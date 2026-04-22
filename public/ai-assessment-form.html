@@ -538,12 +538,15 @@
           body: JSON.stringify(submissionData)
         });
 
-        if (!response.ok) throw new Error('Failed to submit assessment');
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => ({}));
+          throw new Error(errorBody.error || 'Failed to submit assessment');
+        }
         state.currentStep = 8;
         renderStep();
       } catch (error) {
         console.error('Error submitting assessment:', error);
-        alert('There was an error submitting your assessment. Please try again.');
+        alert(`There was an error submitting your assessment: ${error.message || 'Please try again.'}`);
       }
     }
 
