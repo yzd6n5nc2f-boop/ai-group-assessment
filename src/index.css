@@ -61,21 +61,25 @@ h1, h2, h3, h4, h5, h6 {
 
 .assessment-survey .radio-primary:checked,
 .assessment-survey .radio:checked {
-  background-color: var(--survey-red);
-  border-color: var(--survey-red);
+  background-color: var(--survey-red) !important;
+  border-color: var(--survey-red) !important;
 }
 
 .assessment-survey .radio,
 .assessment-survey .radio-primary,
 .assessment-survey .checkbox,
 .assessment-survey .checkbox-primary {
-  border-color: var(--survey-red);
+  border-color: var(--survey-red) !important;
+  color: var(--survey-red) !important;
+  accent-color: var(--survey-red);
+  --chkbg: var(--survey-red);
+  --chkfg: #ffffff;
 }
 
 .assessment-survey .checkbox-primary:checked,
 .assessment-survey .checkbox:checked {
-  background-color: var(--survey-red);
-  border-color: var(--survey-red);
+  background-color: var(--survey-red) !important;
+  border-color: var(--survey-red) !important;
 }
 
 .assessment-survey .select:focus,

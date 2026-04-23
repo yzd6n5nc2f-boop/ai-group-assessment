@@ -38,14 +38,18 @@
     .radio-primary,
     .checkbox,
     .checkbox-primary {
-      border-color: var(--primary-main);
+      border-color: var(--primary-main) !important;
+      color: var(--primary-main) !important;
+      accent-color: var(--primary-main);
+      --chkbg: var(--primary-main);
+      --chkfg: #ffffff;
     }
     .radio-primary:checked,
     .radio:checked,
     .checkbox-primary:checked,
     .checkbox:checked {
-      background-color: var(--primary-main);
-      border-color: var(--primary-main);
+      background-color: var(--primary-main) !important;
+      border-color: var(--primary-main) !important;
     }
     .select:focus,
     .select-bordered:focus,
