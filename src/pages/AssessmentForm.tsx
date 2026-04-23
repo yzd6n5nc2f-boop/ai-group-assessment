@@ -555,9 +555,6 @@ function PersonalInfoStep({
           value={formData.email}
           onChange={(e) => updateFormData('email', e.target.value)}
         />
-        <label className="label">
-          <span className="label-text-alt">Add your email if you would like to receive your individual AI Fluency Profile as a PDF.</span>
-        </label>
       </div>
       
       <div className="flex justify-between mt-8">
