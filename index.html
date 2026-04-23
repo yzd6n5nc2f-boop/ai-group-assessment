@@ -34,8 +34,16 @@
     .bg-secondary-4 { background-color: var(--secondary-4); }
     .bg-secondary-5 { background-color: var(--secondary-5); }
     .survey-box { border: 1px solid var(--primary-main); }
+    .radio,
+    .radio-primary,
+    .checkbox,
+    .checkbox-primary {
+      border-color: var(--primary-main);
+    }
     .radio-primary:checked,
-    .radio:checked {
+    .radio:checked,
+    .checkbox-primary:checked,
+    .checkbox:checked {
       background-color: var(--primary-main);
       border-color: var(--primary-main);
     }
@@ -238,7 +246,7 @@
           
           <div class="flex justify-between mt-8">
             <button class="btn btn-ghost" disabled>Previous</button>
-            <button class="btn btn-primary" onclick="nextStep()" ${canContinue ? '' : 'disabled'}>Next</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
           </div>
         </div>
       `;
@@ -329,7 +337,7 @@
           
           <div class="flex justify-between mt-8">
             <button class="btn btn-ghost" onclick="prevStep()">Previous</button>
-            <button class="btn btn-primary" onclick="nextStep()" ${!state.formData.identityMode ? 'disabled' : ''}>Next</button>
+            <button class="btn btn-primary" onclick="nextStep()">Next</button>
           </div>
         </div>
       `;
@@ -765,6 +773,7 @@
     }
 
     function updateFormData(field, value) {
+      clearValidationError();
       state.formData[field] = value;
       
       // Special handling for question 6 to show/hide reason field
@@ -816,7 +825,80 @@
       }
     }
 
+    function showValidationError(message) {
+      document.getElementById('validation-error')?.remove();
+      const error = document.createElement('div');
+      error.id = 'validation-error';
+      error.className = 'mb-6 rounded-lg border border-primary bg-secondary-3 px-4 py-3 text-sm font-semibold text-primary';
+      error.textContent = message;
+      const content = assessmentContainer.querySelector('.p-8') || assessmentContainer;
+      content.insertBefore(error, content.firstChild);
+    }
+
+    function clearValidationError() {
+      document.getElementById('validation-error')?.remove();
+    }
+
+    function hasValue(value) {
+      return Array.isArray(value) ? value.length > 0 : Boolean(String(value || '').trim());
+    }
+
+    function validateRequiredQuestions(questionNumbers) {
+      return questionNumbers.filter(questionNumber => !hasValue(state.formData[`q${questionNumber}`]));
+    }
+
+    function validateCurrentStep() {
+      const fd = state.formData;
+      if (state.currentStep === 1) {
+        if (!hasValue(fd.group)) return 'Please select your group before continuing.';
+        if (state.showSubgroup && state.subgroups.length > 0 && !hasValue(fd.subgroup)) {
+          return 'Please select your subgroup before continuing.';
+        }
+      }
+
+      if (state.currentStep === 2 && !hasValue(fd.identityMode)) {
+        return 'Please choose an identity preference before continuing.';
+      }
+
+      if (state.currentStep === 4) {
+        const missing = validateRequiredQuestions([1, 2, 3, 4, 5, 6]);
+        if (missing.length > 0) return `Please answer all mindset questions before continuing. Missing: Q${missing.join(', Q')}.`;
+        if (['0', '1', '2', '3'].includes(fd.q6) && !hasValue(fd.txt_reason_for_avoidance)) {
+          return 'Please explain what makes you hesitant or stops you from using AI.';
+        }
+      }
+
+      if (state.currentStep === 5) {
+        const missing = validateRequiredQuestions([7, 8, 9, 10, 11, 12, 13]);
+        if (missing.length > 0) return `Please answer all usage questions before continuing. Missing: Q${missing.join(', Q')}.`;
+        if ((fd.q11.includes('Other') || fd.q12.includes('Other')) && !hasValue(fd.txt_other_tools)) {
+          return 'Please list the other AI tools you use.';
+        }
+      }
+
+      if (state.currentStep === 6) {
+        const missing = validateRequiredQuestions([14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]);
+        if (missing.length > 0) return `Please answer all skills and workflow questions before continuing. Missing: Q${missing.join(', Q')}.`;
+      }
+
+      if (state.currentStep === 7) {
+        const missing = [];
+        if (!hasValue(fd.txt_training_help)) missing.push('what you would like AI training to help with');
+        if (!hasValue(fd.txt_specific_training_questions)) missing.push('specific questions for the training');
+        if (!hasValue(fd.txt_other_comments)) missing.push('other comments');
+        if (missing.length > 0) return `Please complete the final questions before submitting: ${missing.join(', ')}.`;
+      }
+
+      return '';
+    }
+
     function nextStep() {
+      const validationError = validateCurrentStep();
+      if (validationError) {
+        showValidationError(validationError);
+        return;
+      }
+      clearValidationError();
       if (state.currentStep < state.totalSteps) {
         state.currentStep++;
         renderStep();
@@ -832,6 +914,12 @@
 
     async function submitAssessment() {
       try {
+        const validationError = validateCurrentStep();
+        if (validationError) {
+          showValidationError(validationError);
+          return;
+        }
+        clearValidationError();
         const fd = state.formData;
         const group = state.groups.find(item => item.id === fd.group);
         const subgroup = state.subgroups.find(item => item.id === fd.subgroup);

@@ -65,6 +65,19 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--survey-red);
 }
 
+.assessment-survey .radio,
+.assessment-survey .radio-primary,
+.assessment-survey .checkbox,
+.assessment-survey .checkbox-primary {
+  border-color: var(--survey-red);
+}
+
+.assessment-survey .checkbox-primary:checked,
+.assessment-survey .checkbox:checked {
+  background-color: var(--survey-red);
+  border-color: var(--survey-red);
+}
+
 .assessment-survey .select:focus,
 .assessment-survey .select-bordered:focus,
 .assessment-survey .textarea:focus,
