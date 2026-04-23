@@ -1,22 +1,11 @@
 const AIRTABLE_API_BASE = "https://api.airtable.com/v0";
 
 const fallbackGroups = [
-  { id: "g1", name: "Marketing Team" },
-  { id: "g2", name: "Engineering Department" },
-  { id: "g3", name: "Sales Division" },
+  { id: "premier-sports-team", name: "Premier Sports Team" },
+  { id: "may-sme-ai-masterclass", name: "May SME AI Masterclass" },
 ];
 
-const fallbackSubgroups = {
-  g1: [
-    { id: "sg101", name: "Digital Marketing" },
-    { id: "sg102", name: "Content Creation" },
-  ],
-  g2: [
-    { id: "sg201", name: "Frontend Team" },
-    { id: "sg202", name: "Backend Team" },
-    { id: "sg203", name: "DevOps" },
-  ],
-};
+const fallbackSubgroups = {};
 
 function getAirtableConfig() {
   return {
@@ -229,36 +218,11 @@ async function createResponseRecord(data) {
 }
 
 async function listGroups() {
-  const config = getAirtableConfig();
-  if (!config.token || !config.baseId || !config.groupsTable) return fallbackGroups;
-
-  const data = await airtableRequest(
-    `${airtableUrl(config.baseId, config.groupsTable)}?pageSize=100`,
-    config.token
-  );
-
-  return data.records.map((record) => ({
-    id: record.fields.group_id || record.fields.id || record.id,
-    name: record.fields.group_name || record.fields.name || record.fields.Name || record.id,
-  }));
+  return fallbackGroups;
 }
 
 async function listSubgroups(groupId) {
-  const config = getAirtableConfig();
-  if (!config.token || !config.baseId || !config.subgroupsTable) {
-    return fallbackSubgroups[groupId] || [];
-  }
-
-  const filter = encodeURIComponent(`{group_id} = '${groupId}'`);
-  const data = await airtableRequest(
-    `${airtableUrl(config.baseId, config.subgroupsTable)}?pageSize=100&filterByFormula=${filter}`,
-    config.token
-  );
-
-  return data.records.map((record) => ({
-    id: record.fields.subgroup_id || record.fields.id || record.id,
-    name: record.fields.subgroup_name || record.fields.name || record.fields.Name || record.id,
-  }));
+  return fallbackSubgroups[groupId] || [];
 }
 
 module.exports = {

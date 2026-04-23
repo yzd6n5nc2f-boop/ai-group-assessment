@@ -128,9 +128,8 @@ export function AssessmentForm() {
         console.error('Error fetching groups:', error);
         // Fallback data
         setGroups([
-          { id: 'g1', name: 'Marketing Team' },
-          { id: 'g2', name: 'Engineering Department' },
-          { id: 'g3', name: 'Sales Division' }
+          { id: 'premier-sports-team', name: 'Premier Sports Team' },
+          { id: 'may-sme-ai-masterclass', name: 'May SME AI Masterclass' }
         ]);
       }
     };
@@ -157,24 +156,8 @@ export function AssessmentForm() {
           setShowSubgroup(response.data.length > 0);
         } catch (error) {
           console.error('Error fetching subgroups:', error);
-          // Fallback data
-          if (groupId === 'g1') {
-            setSubgroups([
-              { id: 'sg101', name: 'Digital Marketing' },
-              { id: 'sg102', name: 'Content Creation' }
-            ]);
-            setShowSubgroup(true);
-          } else if (groupId === 'g2') {
-            setSubgroups([
-              { id: 'sg201', name: 'Frontend Team' },
-              { id: 'sg202', name: 'Backend Team' },
-              { id: 'sg203', name: 'DevOps' }
-            ]);
-            setShowSubgroup(true);
-          } else {
-            setSubgroups([]);
-            setShowSubgroup(false);
-          }
+          setSubgroups([]);
+          setShowSubgroup(false);
         }
       } else {
         setSubgroups([]);

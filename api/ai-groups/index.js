@@ -11,9 +11,8 @@ module.exports = async function (context) {
     context.res = {
       status: 200,
       body: [
-        { id: "g1", name: "Marketing Team" },
-        { id: "g2", name: "Engineering Department" },
-        { id: "g3", name: "Sales Division" },
+        { id: "premier-sports-team", name: "Premier Sports Team" },
+        { id: "may-sme-ai-masterclass", name: "May SME AI Masterclass" },
       ],
     };
   }

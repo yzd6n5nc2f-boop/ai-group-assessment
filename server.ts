@@ -134,37 +134,11 @@ async function startServer() {
   if (!groupsSeed || groupsSeed.count === 0) {
     await db.run(
       "INSERT INTO groups (group_id, group_name, group_code, active, has_subgroups) VALUES (?, ?, ?, ?, ?)",
-      ["g1", "Marketing Team", "MKT", true, true]
+      ["premier-sports-team", "Premier Sports Team", "PST", true, false]
     );
     await db.run(
       "INSERT INTO groups (group_id, group_name, group_code, active, has_subgroups) VALUES (?, ?, ?, ?, ?)",
-      ["g2", "Engineering Department", "ENG", true, true]
-    );
-    await db.run(
-      "INSERT INTO groups (group_id, group_name, group_code, active, has_subgroups) VALUES (?, ?, ?, ?, ?)",
-      ["g3", "Sales Division", "SLS", true, false]
-    );
-    
-    // Seed subgroups
-    await db.run(
-      "INSERT INTO subgroups (subgroup_id, group_id, subgroup_name, active) VALUES (?, ?, ?, ?)",
-      ["sg101", "g1", "Digital Marketing", true]
-    );
-    await db.run(
-      "INSERT INTO subgroups (subgroup_id, group_id, subgroup_name, active) VALUES (?, ?, ?, ?)",
-      ["sg102", "g1", "Content Creation", true]
-    );
-    await db.run(
-      "INSERT INTO subgroups (subgroup_id, group_id, subgroup_name, active) VALUES (?, ?, ?, ?)",
-      ["sg201", "g2", "Frontend Team", true]
-    );
-    await db.run(
-      "INSERT INTO subgroups (subgroup_id, group_id, subgroup_name, active) VALUES (?, ?, ?, ?)",
-      ["sg202", "g2", "Backend Team", true]
-    );
-    await db.run(
-      "INSERT INTO subgroups (subgroup_id, group_id, subgroup_name, active) VALUES (?, ?, ?, ?)",
-      ["sg203", "g2", "DevOps", true]
+      ["may-sme-ai-masterclass", "May SME AI Masterclass", "MSME", true, false]
     );
   }
 
@@ -191,7 +165,10 @@ async function startServer() {
   // API endpoints for the AI Assessment
   app.get("/api/ai/groups", async (_req, res) => {
     try {
-      const groups = await db.all("SELECT group_id as id, group_name as name FROM groups WHERE active = 1");
+      const groups = [
+        { id: "premier-sports-team", name: "Premier Sports Team" },
+        { id: "may-sme-ai-masterclass", name: "May SME AI Masterclass" },
+      ];
       res.json(groups);
     } catch (error) {
       console.error("Error fetching groups:", error);
@@ -201,12 +178,7 @@ async function startServer() {
 
   app.get("/api/ai/subgroups/:groupId", async (req, res) => {
     try {
-      const { groupId } = req.params;
-      const subgroups = await db.all(
-        "SELECT subgroup_id as id, subgroup_name as name FROM subgroups WHERE group_id = ? AND active = 1",
-        [groupId]
-      );
-      res.json(subgroups);
+      res.json([]);
     } catch (error) {
       console.error("Error fetching subgroups:", error);
       res.status(500).json({ error: "Failed to fetch subgroups" });
